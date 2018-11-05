@@ -136,7 +136,7 @@ nextflow run main.nf
 **Run in background**</br>
 If you want to continue working in the terminal where you launch the pipeline, then you can use the -bg option (bg = background). Nextflow will still send messages to the terminal when new processes are being submitted.
 
-nextflow run -bg  rna_seq1.nf<br/>
+nextflow run -bg  main.nf <br/>
 
 
 **Restart failed/interrupted run**</br>
