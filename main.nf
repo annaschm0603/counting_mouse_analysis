@@ -4,12 +4,12 @@
 * Parameters
 *********************/
 
-params.design		= 'exp_1.tab'
+params.design		= 'exp.tab'
 params.macs_call	= '-B -q 1e-5 -f BAMPE'
 params.genome		= 'Athaliana'
-params.bams		= "bam_1/*.bam" 
+params.bams		= "bam/*.bam" 
 params.quality		= 10  
-params.output		= "results_1/"
+params.output		= "results/"
 params.anno_distance	= 900
 // params.txdb		= "TxDb.Athaliana.BioMart.plantsmart28" 
 // "mm10ref_seq_txdb.sqlite" "TxDb.Mmusculus.UCSC.mm10.knownGene"
