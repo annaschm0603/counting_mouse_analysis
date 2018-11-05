@@ -1,13 +1,13 @@
 #!/usr/bin/env nextflow
-
-// inparameters
-params.bams          = "demult/*.bam" // path to demultiplexed bam files. ALL bam files in folder will be aligned!!
+//#########################
+// Parameters
+//#########################
+params.bams          = "../demult/*.bam" // path to demultiplexed bam files. ALL bam files in folder will be aligned!!
 params.read_length   = 50
 params.output        = "bam/" // path to folder where aligned files will end up
 params.stats         = "align_logs/"  // path to folder where alignment stats end up
 params.min_length    = 5 // minimal length (after trimmining) to keep reed
 params.overlap       = 1 // minimal length of adapter seq to be removed (if not 1, there will be a dip in the  fragment size distribution!!)
-params.read_length   = 50
 params.A             = "CTGTCTCTTATACACATCTGACGCTGCCGACGA" 
 params.a             = "CTGTCTCTTATACACATCTCCGAGCCCACGAGAC"
 params.index         = "/lustre/scratch/projects/berger_common/backup_berger_common/Bowtie2Index/genome"
