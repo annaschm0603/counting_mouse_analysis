@@ -8,9 +8,9 @@ params.output        = "bam/" // path to folder where aligned files will end up
 params.stats         = "align_logs/"  // path to folder where alignment stats end up
 params.min_length    = 5 // minimal length (after trimmining) to keep reed
 params.overlap       = 1 // minimal length of adapter seq to be removed (if not 1, there will be a dip in the  fragment size distribution!!)
-params.A             = "CTGTCTCTTATACACATCTGACGCTGCCGACGA" 
+params.A             = "CTGTCTCTTATACACATCTGACGCTGCCGACGA"
 params.a             = "CTGTCTCTTATACACATCTCCGAGCCCACGAGAC"
-params.index         = "/lustre/scratch/projects/berger_common/backup_berger_common/Bowtie2Index/genome"
+params.index         = "/groups/berger/lab/NGS_annotations/backup_berger_common/Bowtie2Index/genome"
 
 
 //params.index         = "/lustre/scratch/projects/berger_common/mm10/mm10_index_4Bowtie/mm10"
@@ -18,9 +18,8 @@ params.index         = "/lustre/scratch/projects/berger_common/backup_berger_com
 
 // index
 index=file(params.index)
-
 // start channel
-bams = Channel 
+bams = Channel
        .fromPath(params.bams)
        .map { file -> tuple(file.baseName, file) }
 
@@ -40,7 +39,7 @@ tag "name: $name"
    script:
    if( params.read_length == 0 )
        """
-       samtools view -f 0x40 -b ${bam} | samtools bam2fq - > "${name}_R1_.fastq" 
+       samtools view -f 0x40 -b ${bam} | samtools bam2fq - > "${name}_R1_.fastq"
        """
 
    else if( params.read_length > 0 )
@@ -48,7 +47,7 @@ tag "name: $name"
        samtools view -f 0x40 -b ${bam} | samtools bam2fq - | fastx_trimmer -l $params.read_length -Q33 -o "${name}_R1_.fastq"
        """
 
-   else 
+   else
        error "Invalid read_length argument"
 }
 
@@ -71,12 +70,12 @@ tag "name: $name"
        """
        samtools view -f 0x80 -b ${bam} | samtools bam2fq - | fastx_trimmer -l ${params.read_length} -Q33 -o "${name}_R2_.fastq"
        """
-   
-   else 
+
+   else
        error "Invalid read_length argument"
 }
 
-// downstream pipeline needs the first and second read at once. 
+// downstream pipeline needs the first and second read at once.
 
 fqs = fq1.cross(fq2).map{ it -> tuple( it[0][0], it[0][1],it[1][1] )}
 
@@ -86,14 +85,14 @@ tag "name: $name"
 
    input:
    set name, file(fq1), file(fq2) from fqs
- 
+
    output:
    set name, file("${name}_cutadapt_R1_fastq"), file("${name}_cutadapt_R2_fastq") into trimmed
-   file("${name}.cutadapt.log") into calogs 
+   file("${name}.cutadapt.log") into calogs
 
    script:
    """
-   cutadapt --minimum-length ${params.min_length} --overlap ${params.overlap} -a ${params.a}  -A ${params.A} -o ${name}_cutadapt_R1_fastq -p ${name}_cutadapt_R2_fastq ${fq1} ${fq2} > ${name}.cutadapt.log 
+   cutadapt --minimum-length ${params.min_length} --overlap ${params.overlap} -a ${params.a}  -A ${params.A} -o ${name}_cutadapt_R1_fastq -p ${name}_cutadapt_R2_fastq ${fq1} ${fq2} > ${name}.cutadapt.log
    """
 }
 
@@ -104,12 +103,12 @@ tag "name: $name"
    set name, file(cut1), file(cut2) from trimmed
 
    output:
-   set name, file("${name}.aligned_cut.sam") into sams  
+   set name, file("${name}.aligned_cut.sam") into sams
    file("${name}.bowtie2.log") into btlogs
 
    script:
    """
-   bowtie2 --end-to-end -X 2000 -x ${index} -1 ${cut1} -2 ${cut2} -S ${name}.aligned_cut.sam 2> ${name}.bowtie2.log 
+   bowtie2 --end-to-end -X 2000 -x ${index} -1 ${cut1} -2 ${cut2} -S ${name}.aligned_cut.sam 2> ${name}.bowtie2.log
 
    """
 }
@@ -140,11 +139,11 @@ process savelog {
 tag "name: $name"
 publishDir params.stats, mode: 'copy'
 
- input: 
+ input:
  file(mylog) from logs
 
  output:
- file "${mylog.baseName}.logfile" 
+ file "${mylog.baseName}.logfile"
 
   script:
   """
@@ -153,6 +152,6 @@ publishDir params.stats, mode: 'copy'
   cp ${mylog} \${fbname}.logfile
   """
 }
- 
+
 
 println "Project : $workflow.projectDir/$params.stats"
