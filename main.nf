@@ -7,11 +7,11 @@
 params.design		= 'exp.tab'
 params.macs_call	= '-B -q 1e-5 -f BAMPE'
 params.genome		= 'Athaliana'
-params.bams		= "bam/*.bam" 
-params.quality		= 10  
+params.bams		= "bam/*.bam"
+params.quality		= 10
 params.output		= "results/"
 params.anno_distance	= 900
-// params.txdb		= "TxDb.Athaliana.BioMart.plantsmart28" 
+// params.txdb		= "TxDb.Athaliana.BioMart.plantsmart28"
 // "mm10ref_seq_txdb.sqlite" "TxDb.Mmusculus.UCSC.mm10.knownGene"
 params.peak_merge_dist	= 50
 params.deseq_p		= 0.01
@@ -75,12 +75,25 @@ designFile = file(params.design)
 
 // generate uniq filtered files, needed for replicate merge and htseq counts, For the narrowPeaks we don't want the name in the output
 
-process generateFiles {
-tag "bam : $name"  
+process generateFiles_qf {
+	input:
+	set name, file(bam) from bamset
+
+	output:
+	set name, file("${name}_tmp.bam") into filtered
+
+	script:
+	"""
+	samtools view -bSq ${params.quality} ${bam} > ${name}_tmp.bam
+	"""
+	}
+
+process generateFiles_dup {
+tag "bam : $name"
 publishDir "${params.output}/bam", mode: 'copy'
-  
+
     input:
-    set name, file(bam) from bamset
+    set name, file(bam) from filtered
 
     output:
     set name, file("${name}_uniq_filtered.bam") into uniq_filtered
@@ -89,10 +102,7 @@ publishDir "${params.output}/bam", mode: 'copy'
 
     script:
     """
-    export TMPDIR=\$(pwd)
-    samtools view -bSq ${params.quality} ${bam} > ${name}_tmp.bam
-    java -Djava.io.tmpdir=\$TMPDIR -jar \$EBROOTPICARD/picard.jar MarkDuplicates I=${name}_tmp.bam  O= ${name}_uniq_filtered.bam  M=${name}_filtered.dup_metrics.txt AS=true REMOVE_DUPLICATES=true 
-   TMP_DIR=\$TMPDIR 
+		picard MarkDuplicates I=${name}_tmp.bam  O= ${name}_uniq_filtered.bam  M=${name}_filtered.dup_metrics.txt AS=true REMOVE_DUPLICATES=true
     """
 }
 
@@ -100,22 +110,34 @@ uniq_filtered.into { uniq_filtered ; bw_bam }
 
 // bw of individual bam files
 
+process bwIndBam_index {
+
+	input:
+	set name, file(bam) from bw_bam
+
+	output:
+	set name, file("${name}_uniq_filtered.bam"), file("${name}_uniq_filtered.bam.bai") into index
+
+	script:
+	"""
+	samtools index ${bam}
+	"""
+}
+
 process bwIndBam {
 publishDir "${params.output}/ds_bam", mode: 'copy'
 tag "name: $name"
 
     input:
-    set name, file(bam) from bw_bam
+    set name, file(bam), file(bai) from index
 
     output:
     set name, file("${name}.bw")
 
     script:
     """
-    export TMPDIR=\$(pwd)
-    samtools index ${bam}
-    bamCoverage -b ${bam} -o ${name}.bw --normalizeTo1x ${tonorm} --binSize=${params.bw_binsize} 
-    """	
+    bamCoverage -b ${bam} -o ${name}.bw --normalizeTo1x ${tonorm} --binSize=${params.bw_binsize}
+    """
 }
 
 
@@ -145,10 +167,10 @@ tag "id: $id"
     """
 }
 
-// run statistics on merged files (needed for down sampling) 
+// run statistics on merged files (needed for down sampling)
 
 process mergeStats {
-tag "type: $type" 
+tag "type: $type"
     input:
     set type, file(merge) from merged_bam_count
 
@@ -166,17 +188,17 @@ tag "type: $type"
 process subsampleMerged {
 tag "type: $type"
 publishDir "${params.output}/ds_bam", mode: 'copy'
-    
+
     input:
     file(stat) from stats.collect()
     set type, file(bam) from merged_bam_sub
-  
+
     output:
     set type, file("${type}.subset.bam") into subbams
 
     script:
     """
-    $baseDir/bin/downsample.sh 
+    $baseDir/bin/downsample.sh
     """
 }
 
@@ -198,20 +220,33 @@ tag "bam: $bam"
 
 }
 
+process bam2bw_index {
+
+	input:
+	set type, file(bam) from sortbams_bw
+
+	output:
+	set type, file("${type}.subset_sort.bam"), file("${type}.subset_sort.bam.bai") into sortbams_bw_index
+
+	script:
+	"""
+	samtools index ${bam}
+	"""
+
+}
+
 process bam2bw {
 tag "bam: $bam"
 publishDir "${params.output}/ds_bam", mode: 'copy'
 
    input:
-   set type, file(bam) from sortbams_bw
+   set type, file(bam), file(bai) from sortbams_bw_index
 
    output:
-   set type, file("${type}.subset.bw") 
+   set type, file("${type}.subset.bw")
 
    script:
    """
-   export TMPDIR=\$(pwd)
-   samtools index ${bam}
    bamCoverage -b ${bam} -o ${type}.subset.bw --normalizeTo1x ${tonorm} --binSize=${params.bw_binsize}
    """
 }
@@ -222,7 +257,7 @@ process callMACS2 {
 tag "type: $type"
 publishDir "${params.output}/macs2", mode: 'copy'
 
-    input: 
+    input:
     set type, file(sbam) from subbams
 
     output:
@@ -232,22 +267,21 @@ publishDir "${params.output}/macs2", mode: 'copy'
 
     script:
     """
-    export TMPDIR=\$(pwd)
     macs2 callpeak -t ${sbam} -g ${params.genomesize} -n ${type} ${params.macs_call}
     """
 }
 
-// combine macs peaks to master peaks set 
+// combine macs peaks to master peaks set
 
 process makeMasterPeaks {
-publishDir "${params.output}/gff", mode: 'copy'   
+publishDir "${params.output}/gff", mode: 'copy'
 
    input:
-   file(narrowPeaks) from narrowPeaks_to_merge.collect() 
+   file(narrowPeaks) from narrowPeaks_to_merge.collect()
 
    output:
    file("master.gff") into master
-   file("master.gff") into master2 
+   file("master.gff") into master2
    file("master_anno.csv") into anno
    file("master_anno.csv") into anno2
 
@@ -275,15 +309,15 @@ publishDir "${params.output}/macs2", mode: 'copy'
 
   script:
   """
-  $baseDir/bin/peakplots.R 
+  $baseDir/bin/peakplots.R
   """
 }
 // gff file from each narrow peak
 
 process makeFileGff {
 tag "peak: $type"
-publishDir "${params.output}/gff", mode: 'copy' 
-   
+publishDir "${params.output}/gff", mode: 'copy'
+
    input:
    set type, file(narrowPeaks) from narrowPeaks_to_gff
 
@@ -294,14 +328,14 @@ publishDir "${params.output}/gff", mode: 'copy'
    """
    $baseDir/bin/peaks2gff.R
    """
-}  
+}
 
 // count reads in master peaks and calculate FPKM
 
 process count_reads_in_master {
 tag "name: $name"
-publishDir "${params.output}/counts", mode: 'copy'  
- 
+publishDir "${params.output}/counts", mode: 'copy'
+
    input:
    file("master.gff") from master
    set name, file(bams) from final_bamset_count
@@ -332,7 +366,7 @@ tag "gff: $gff"
 
    output:
    file("${bams}_${gff}_counts.tab") into narrow_counts
-   file("${bams}_${gff}_fpkm.tab") into narrow_fpkm  
+   file("${bams}_${gff}_fpkm.tab") into narrow_fpkm
 
    """
    htseq-count -f bam -s no ${bams} ${gff} > ${bams}_${gff}_counts.tab
@@ -344,13 +378,13 @@ tag "gff: $gff"
 process deseq2 {
 publishDir "${params.output}/deseq", mode: 'copy'
 
-   input: 
+   input:
    file("master_anno.csv") from anno
    file(counts) from master_counts.collect()
    file(designFile)
 
    output:
-   file("dds.Rdata")   
+   file("dds.Rdata")
    file("master_peaks_deseq_fig*")
    file("deseq_results.csv") into deseq
 
@@ -363,29 +397,26 @@ publishDir "${params.output}/deseq", mode: 'copy'
 process combineResults {
 publishDir "${params.output}/fpkm", mode: 'copy'
 
-  input: 
+  input:
   file(narrow) from GFFS.collect()
-  file(fpkm) from narrow_fpkm.collect() 
+  file(fpkm) from narrow_fpkm.collect()
   file("master.gff") from master2
   file(m_fpkm) from master_fpkm.collect()
   file("deseq_results.csv") from deseq
- 
+
   output:
   file("*_summary.tab")
-  file("deseq_total_results.csv")   
+  file("deseq_total_results.csv")
 
   script:
   """
-  $baseDir/bin/combineFPKM.sh 
+  $baseDir/bin/combineFPKM.sh
   """
 
 
 }
 
 
-workflow.onComplete { 
+workflow.onComplete {
 	println ( workflow.success ? "Done!" : "Oops .. something went wrong" )
 }
-
-
-
