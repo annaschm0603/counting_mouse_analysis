@@ -299,10 +299,8 @@ publishDir "${params.output}/macs2", mode: 'copy'
   file("master_anno.csv") from anno2
 
   output:
-  file("peakOV.fig1.pdf")
   file("peakOV.fig2.pdf")
   file("peakOV.fig3.pdf")
-  file("peakOV.fig1.png")
   file("peakOV.fig2.png")
   file("peakOV.fig3.png")
 
