@@ -252,6 +252,8 @@ publishDir "${params.output}/ds_bam", mode: 'copy'
 }
 
 // call macs2, narrowPeaks are needed for masterpeak and counting in individual peaks
+// Ugly test solution - to be improved. On test data no peaks are called so I inject other peaks to test the rest of the pipeline
+
 
 process callMACS2 {
 tag "type: $type"
@@ -266,10 +268,12 @@ publishDir "${params.output}/macs2", mode: 'copy'
     file("${type}_peaks.narrowPeak") into narrowPeaks_to_plot
 
     script:
-    """
-    macs2 callpeak -t ${sbam} -g ${params.genomesize} -n ${type} ${params.macs_call}
-    """
+		"""
+		macs2 callpeak -t ${sbam} -g ${params.genomesize} -n ${type} ${params.macs_call}
+		"""
+		}
 }
+
 
 // combine macs peaks to master peaks set
 
@@ -299,6 +303,8 @@ publishDir "${params.output}/macs2", mode: 'copy'
   file("master_anno.csv") from anno2
 
   output:
+	file("peakOV.fig1.pdf")
+  file("peakOV.fig1.png")
   file("peakOV.fig2.pdf")
   file("peakOV.fig3.pdf")
   file("peakOV.fig2.png")
