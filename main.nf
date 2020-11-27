@@ -271,7 +271,6 @@ publishDir "${params.output}/macs2", mode: 'copy'
 		"""
 		macs2 callpeak -t ${sbam} -g ${params.genomesize} -n ${type} ${params.macs_call}
 		"""
-		}
 }
 
 
