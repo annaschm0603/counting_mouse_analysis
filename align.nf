@@ -10,14 +10,42 @@ params.min_length    = 5 // minimal length (after trimmining) to keep reed
 params.overlap       = 1 // minimal length of adapter seq to be removed (if not 1, there will be a dip in the  fragment size distribution!!)
 params.A             = "CTGTCTCTTATACACATCTGACGCTGCCGACGA"
 params.a             = "CTGTCTCTTATACACATCTCCGAGCCCACGAGAC"
-params.index         = "/groups/berger/lab/NGS_annotations/backup_berger_common/Bowtie2Index/genome"
-
+//params.index         = "/groups/berger/lab/NGS_annotations/backup_berger_common/Bowtie2Index/genome"
+params.genomeIndex = "tair10"
 
 //params.index         = "/lustre/scratch/projects/berger_common/mm10/mm10_index_4Bowtie/mm10"
 
 
 // index
-index=file(params.index)
+if ( params.genomeIndex == "tair10"){
+  params.index="library://elin.axelsson/index/index_bowtie2_tair10:v2.4.1-release-47"
+}
+
+/****************************
+* STEP 0 PULL INDEX IMAGE
+*****************************/
+
+
+process get_bowtie2_index {
+
+  input:
+  file params.index
+
+  output:
+  file params.genomeIndex into bw2index
+  file "*.fa.gz" into fasta
+  file "*.txt" into doc
+
+script:
+"""
+singularity run ${params.index}
+"""
+}
+
+
+
+
+
 // start channel
 bams = Channel
        .fromPath(params.bams)
@@ -82,6 +110,7 @@ fqs = fq1.cross(fq2).map{ it -> tuple( it[0][0], it[0][1],it[1][1] )}
 
 process cutadapt {
 tag "name: $name"
+publishDir params.output, mode: 'copy', pattern: '{*.log}'
 
    input:
    set name, file(fq1), file(fq2) from fqs
@@ -98,9 +127,11 @@ tag "name: $name"
 
 process bowtie2 {
 tag "name: $name"
+publishDir params.output, mode: 'copy', pattern: '{*.log}'
 
    input:
    set name, file(cut1), file(cut2) from trimmed
+   file(genomeIndex) from bw2index
 
    output:
    set name, file("${name}.aligned_cut.sam") into sams
@@ -108,7 +139,7 @@ tag "name: $name"
 
    script:
    """
-   bowtie2 --end-to-end -X 2000 -x ${index} -1 ${cut1} -2 ${cut2} -S ${name}.aligned_cut.sam 2> ${name}.bowtie2.log
+   bowtie2 --end-to-end -X 2000 -x ${genomeIndex}/${genomeIndex} -1 ${cut1} -2 ${cut2} -S ${name}.aligned_cut.sam 2> ${name}.bowtie2.log
 
    """
 }
