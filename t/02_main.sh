@@ -52,7 +52,7 @@ echo "bam"
 
 
   if [ $(md5sum ${T_DIR}/results/bam/38701_5_uniq_filtered.bam  | \
-    awk '{print $1}') != "0dbd1687a95e77eb0f0307055648db2e" ]; then
+    awk '{print $1}') != "1fb71baede5f14011c379d864cf211f7" ]; then
     echo "wrong md5sum 38701_5_uniq_filtered.bam"
     exit 1
   fi
@@ -102,7 +102,7 @@ if [ ! -f ${T_DIR}/results/counts/34762_5_uniq_filtered.bam_cond1_peaks.narrowPe
 fi
 
 if [ $(md5sum ${T_DIR}/results/counts/38701_5_uniq_filtered.bam_master_fpkm.tab  | \
-  awk '{print $1}') != "007289e7d928f9064fa6be70ba85e13d" ]; then
+  awk '{print $1}') != "2c1fe94637d1c0aa3568256edd233596" ]; then
   echo "wrong md5sum 38701_5_uniq_filtered.bam_master_fpkm.tab"
   exit 1
 fi
@@ -143,7 +143,7 @@ echo "deseq2"
   fi
 
   if [ $(md5sum ${T_DIR}/results/deseq/dds.Rdata  | \
-    awk '{print $1}') != "ab5027444275391ad93d377a6671f66d" ]; then
+    awk '{print $1}') != "fa4001364607c374b95d0197abc37e14" ]; then
     echo "wrong md5sum dds.Rdata"
     exit 1
   fi
@@ -177,7 +177,7 @@ echo "ds_bam"
 
 
   if [ $(md5sum ${T_DIR}/results/ds_bam/38702_5.bw  | \
-    awk '{print $1}') != "a6147b3faa4595497b0f3b4ee6154b8f" ]; then
+    awk '{print $1}') != "f30ae2a6ae288e86e3be245d8281eb94" ]; then
     echo "wrong md5sum 38702_5.bw"
     exit 1
   fi
@@ -207,7 +207,7 @@ echo "fpkm"
 
 
   if [ $(md5sum ${T_DIR}/results/fpkm/deseq_total_results.csv  | \
-    awk '{print $1}') != "406ca68efd516d7c5209e1fd724ca14a" ]; then
+    awk '{print $1}') != "848e76b4e6006daf7c58fe9a1232b3a4" ]; then
     echo "wrong md5sum deseq_total_results.csv"
     exit 1
   fi
@@ -242,7 +242,7 @@ echo "gff"
 
 
   if [ $(md5sum ${T_DIR}/results/gff/master_anno.csv  | \
-    awk '{print $1}') != "88df953ebc011cf577a76f718a342e1b" ]; then
+    awk '{print $1}') != "5a43973894adcdeafcf4714af536fbb5" ]; then
     echo "wrong md5sum master_anno.csv"
     exit 1
   fi
@@ -276,7 +276,7 @@ echo "macs2"
 
 
   if [ $(md5sum ${T_DIR}/results/macs2/cond2_peaks.narrowPeak  | \
-    awk '{print $1}') != "8f252870d6456192f389a94de0d26202" ]; then
+    awk '{print $1}') != "9d8a9c42535319b49ec6ab33287fb7ca" ]; then
     echo "wrong md5sum cond2_peaks.narrowPeak"
     exit 1
   fi
