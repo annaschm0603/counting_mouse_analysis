@@ -52,7 +52,7 @@ echo "bam"
 
 
   if [ $(md5sum ${T_DIR}/results/bam/38701_5_uniq_filtered.bam  | \
-    awk '{print $1}') != "1fb71baede5f14011c379d864cf211f7" ]; then
+    awk '{print $1}') != "899b66bc213b5b670702e6125c27bfa6" ]; then
     echo "wrong md5sum 38701_5_uniq_filtered.bam"
     exit 1
   fi

@@ -102,7 +102,11 @@ publishDir "${params.output}/bam", mode: 'copy'
 
     script:
     """
-		picard MarkDuplicates I=${name}_tmp.bam  O= ${name}_uniq_filtered.bam  M=${name}_filtered.dup_metrics.txt AS=true REMOVE_DUPLICATES=true
+		java -jar /usr/picard/picard.jar MarkDuplicates \
+		 	I=${name}_tmp.bam \
+		  O= ${name}_uniq_filtered.bam \
+      M=${name}_filtered.dup_metrics.txt \
+			AS=true REMOVE_DUPLICATES=true
     """
 }
 
